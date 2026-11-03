@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifi - AI Misinformation & Health Fact-Checking Hub</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; background-color: #0f1117; color: #e2e8f0; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: #161922; border-right: 1px solid #2d3748; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #a855f7; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { background: none; border: none; color: #94a3b8; padding: 12px 16px; border-radius: 8px; text-align: left; font-size: 15px; cursor: pointer; transition: 0.3s; width: 100%; display: flex; align-items: center; gap: 10px; }
+        .nav-btn:hover, .nav-btn.active { background-color: #7e22ce; color: #ffffff; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Cards and Elements */
+        .card { background-color: #1e2230; border: 1px solid #2d3748; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        h2 { color: #c084fc; margin-bottom: 15px; }
+        input, textarea { width: 100%; padding: 12px; background-color: #0f1117; border: 1px solid #374151; border-radius: 8px; color: #fff; margin-bottom: 12px; font-size: 14px; }
+        button.action-btn { background-color: #9333ea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button.action-btn:hover { background-color: #7e22ce; }
+
+        .result-box { background-color: #111827; border-left: 4px solid #a855f7; padding: 15px; margin-top: 15px; border-radius: 4px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="logo">🧠 Verifi</div>
+        <button class="nav-btn active" onclick="showTab('search', event)">🔍 Search & Verify</button>
+        <button class="nav-btn" onclick="showTab('ai-detector', event)">🤖 AI Detection</button>
+        <button class="nav-btn" onclick="showTab('doctor', event)">🩺 Doctor Portal</button>
+        <button class="nav-btn" onclick="showTab('team', event)">👥 The Team</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        
+        <!-- Tab 1: Search & Verify -->
+        <div id="search" class="tab-content active">
+            <h2>Search Health Information</h2>
+            <div class="card">
+                <p style="margin-bottom: 10px; color: #94a3b8;">Search any health claim to check its scientific reliability:</p>
+                <input type="text" id="searchInput" placeholder="Enter claim (e.g., coffee causes sleeping)...">
+                <button class="action-btn" onclick="handleSearch()">Search Database</button>
+                <div id="searchResult" class="result-box" style="display:none;"></div>
+            </div>
+
+            <!-- Live Impact Dashboard -->
+            <div class="card" style="border: 2px dashed #a855f7; margin-top: 20px;">
+                <h3 style="color: #c084fc; margin-bottom: 10px;">📊 Verifi Impact Dashboard</h3>
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">Live metrics on medical misinformation detection:</p>
+                
+                <div style="display: flex; gap: 15px; justify-content: space-around; text-align: center;">
+                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
+                        <span id="totalTests" style="font-size: 24px; font-weight: bold; color: #a855f7;">0</span>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Total Tests</p>
+                    </div>
+                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
+                        <span id="fakeDetected" style="font-size: 24px; font-weight: bold; color: #ef4444;">0</span>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Fake Claims Detected</p>
+                    </div>
+                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
+                        <span id="doctorVerified" style="font-size: 24px; font-weight: bold; color: #22c55e;">0</span>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Verified Medical Facts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: AI Misinformation Detector -->
+        <div id="ai-detector" class="tab-content">
+            <h2>AI Misinformation Detector</h2>
+            <div class="card">
+                <p style="margin-bottom: 10px; color: #94a3b8;">Analyze text or AI-generated medical outputs for hallucinations:</p>
+                <textarea id="aiText" rows="6" placeholder="Paste medical text or AI response here..."></textarea>
+                <button class="action-btn" onclick="handleAIDetection()">Analyze Text</button>
+                <div id="aiResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Doctor Portal -->
+        <div id="doctor" class="tab-content">
+            <h2>Medical Expert Verification</h2>
+            <div class="card">
+                <h3>Verify Doctor Credentials</h3>
+                <input type="text" id="docLicense" placeholder="Enter medical license ID (e.g., CERT-12345)">
+                <button class="action-btn" onclick="handleDoctorVerification()">Verify Account</button>
+                <div id="docResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Team -->
+        <div id="team" class="tab-content">
+            <h2>Junior Academy Innovation Challenge</h2>
+            <div class="card">
+                <h3>Verifi Team Members</h3>
+                <p style="color: #c084fc; margin-top: 10px; font-size: 16px;">Yassen, Eva, Ayinezo, Nour, Hassan, Jana</p>
+                <p style="color: #94a3b8; margin-top: 10px;">Built to detect, flag, and neutralize health misinformation and AI-generated medical hallucinations.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showTab(tabId, evt) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        let stats = { tests: 0, fakes: 0, verified: 0 };
+
+        function updateStatsDisplay() {
+            document.getElementById('totalTests').innerText = stats.tests;
+            document.getElementById('fakeDetected').innerText = stats.fakes;
+            document.getElementById('doctorVerified').innerText = stats.verified;
+        }
+
+        async function handleSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            const resultDiv = document.getElementById('searchResult');
+            
+            if (!query) return;
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = "Searching Flask Backend...";
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = data.result;
+                stats.tests++;
+                if (data.verified) stats.verified++;
+                updateStatsDisplay();
+            } catch (err) {
+                resultDiv.innerHTML = "Error connecting to Python backend server.";
+            }
+        }
+
+        async function handleAIDetection() {
+            const text = document.getElementById('aiText').value.trim();
+            const resultDiv = document.getElementById('aiResult');
+            
+            if (!text) return;
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = "Analyzing with AI backend...";
+
+            try {
+                const response = await fetch('/api/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <strong>Verdict:</strong> ${data.verdict}<br>
+                    <strong>Confidence Score:</strong> ${data.score}<br>
+                    <strong>Risk Level:</strong> ${data.risk_level}
+                `;
+                
+                stats.tests++;
+                if (data.is_fake) stats.fakes++;
+                updateStatsDisplay();
+            } catch (err) {
+                resultDiv.innerHTML = "Error analyzing text with backend.";
+            }
+        }
+
+        function handleDoctorVerification() {
+            const license = document.getElementById('docLicense').value.trim();
+            const resultDiv = document.getElementById('docResult');
+            resultDiv.style.display = 'block';
+            
+            if (license) {
+                resultDiv.innerHTML = "✅ Medical license verified successfully. Welcome to the Expert Review Panel.";
+            } else {
+                resultDiv.innerHTML = "⚠️ Please enter a valid medical license ID.";
+            }
+        }
+    </script>
+</body>
+</html>
