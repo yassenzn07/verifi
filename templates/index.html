@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { display: flex; background-color: #0f1117; color: #e2e8f0; height: 100vh; overflow: hidden; }
-        
+
         /* Sidebar */
         .sidebar { width: 260px; background-color: #161922; border-right: 1px solid #2d3748; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
         .logo { font-size: 24px; font-weight: bold; color: #a855f7; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
@@ -22,11 +22,33 @@
         /* Cards and Elements */
         .card { background-color: #1e2230; border: 1px solid #2d3748; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
         h2 { color: #c084fc; margin-bottom: 15px; }
-        input, textarea { width: 100%; padding: 12px; background-color: #0f1117; border: 1px solid #374151; border-radius: 8px; color: #fff; margin-bottom: 12px; font-size: 14px; }
+        input, textarea, select { width: 100%; padding: 12px; background-color: #0f1117; border: 1px solid #374151; border-radius: 8px; color: #fff; margin-bottom: 12px; font-size: 14px; }
         button.action-btn { background-color: #9333ea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button.action-btn:hover { background-color: #7e22ce; }
+        button.action-btn:disabled { opacity: 0.6; cursor: wait; }
+        button.ghost-btn { background: none; color: #94a3b8; border: 1px solid #374151; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        button.ghost-btn:hover { color: #fff; border-color: #a855f7; }
 
         .result-box { background-color: #111827; border-left: 4px solid #a855f7; padding: 15px; margin-top: 15px; border-radius: 4px; line-height: 1.6; }
+        .result-box.good { border-left-color: #22c55e; }
+        .result-box.warn { border-left-color: #f59e0b; }
+        .result-box.bad { border-left-color: #ef4444; }
+        .muted { color: #94a3b8; font-size: 13px; }
+        .claim-item { background: #111827; border: 1px solid #2d3748; border-radius: 8px; padding: 14px; margin-top: 12px; }
+        .claim-item p { margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; }
+        .row > * { flex: 1; }
+
+        /* Phones: sidebar becomes a top bar */
+        @media (max-width: 760px) {
+            body { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+            .sidebar { width: 100%; flex-direction: row; align-items: center; gap: 6px; padding: 10px; overflow-x: auto; border-right: none; border-bottom: 1px solid #2d3748; }
+            .logo { margin-bottom: 0; font-size: 20px; }
+            .nav-btn { width: auto; white-space: nowrap; padding: 10px 12px; font-size: 14px; }
+            .main-content { padding: 16px; overflow: visible; }
+            .stat-row { flex-direction: column; }
+            .row { flex-direction: column; gap: 0; }
+        }
     </style>
 </head>
 <body>
@@ -37,28 +59,29 @@
         <button class="nav-btn active" onclick="showTab('search', event)">🔍 Search & Verify</button>
         <button class="nav-btn" onclick="showTab('ai-detector', event)">🤖 AI Detection</button>
         <button class="nav-btn" onclick="showTab('doctor', event)">🩺 Doctor Portal</button>
+        <button class="nav-btn" onclick="showTab('community', event)">💬 Community</button>
         <button class="nav-btn" onclick="showTab('team', event)">👥 The Team</button>
     </div>
 
     <!-- Main Content Area -->
     <div class="main-content">
-        
+
         <!-- Tab 1: Search & Verify -->
         <div id="search" class="tab-content active">
             <h2>Search Health Information</h2>
             <div class="card">
                 <p style="margin-bottom: 10px; color: #94a3b8;">Search any health claim to check its scientific reliability:</p>
-                <input type="text" id="searchInput" placeholder="Enter claim (e.g., coffee causes sleeping)...">
-                <button class="action-btn" onclick="handleSearch()">Search Database</button>
+                <input type="text" id="searchInput" maxlength="300" placeholder="Enter claim (e.g., coffee causes sleeping)...">
+                <button class="action-btn" id="searchBtn" onclick="handleSearch()">Search Database</button>
                 <div id="searchResult" class="result-box" style="display:none;"></div>
             </div>
 
-            <!-- Live Impact Dashboard -->
+            <!-- Live Impact Dashboard (numbers come from the server database) -->
             <div class="card" style="border: 2px dashed #a855f7; margin-top: 20px;">
                 <h3 style="color: #c084fc; margin-bottom: 10px;">📊 Verifi Impact Dashboard</h3>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">Live metrics on medical misinformation detection:</p>
-                
-                <div style="display: flex; gap: 15px; justify-content: space-around; text-align: center;">
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">Live metrics on medical misinformation detection (shared by all users):</p>
+
+                <div class="stat-row" style="display: flex; gap: 15px; justify-content: space-around; text-align: center;">
                     <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
                         <span id="totalTests" style="font-size: 24px; font-weight: bold; color: #a855f7;">0</span>
                         <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Total Tests</p>
@@ -72,6 +95,7 @@
                         <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Verified Medical Facts</p>
                     </div>
                 </div>
+                <p id="statsExtra" class="muted" style="margin-top: 12px; text-align: center;"></p>
             </div>
         </div>
 
@@ -80,24 +104,55 @@
             <h2>AI Misinformation Detector</h2>
             <div class="card">
                 <p style="margin-bottom: 10px; color: #94a3b8;">Analyze text or AI-generated medical outputs for hallucinations:</p>
-                <textarea id="aiText" rows="6" placeholder="Paste medical text or AI response here..."></textarea>
-                <button class="action-btn" onclick="handleAIDetection()">Analyze Text</button>
+                <textarea id="aiText" rows="6" maxlength="5000" placeholder="Paste medical text or AI response here..."></textarea>
+                <button class="action-btn" id="detectBtn" onclick="handleAIDetection()">Analyze Text</button>
                 <div id="aiResult" class="result-box" style="display:none;"></div>
+                <p id="modelNote" class="muted" style="margin-top: 14px;"></p>
             </div>
         </div>
 
         <!-- Tab 3: Doctor Portal -->
         <div id="doctor" class="tab-content">
             <h2>Medical Expert Verification</h2>
-            <div class="card">
-                <h3>Verify Doctor Credentials</h3>
-                <input type="text" id="docLicense" placeholder="Enter medical license ID (e.g., CERT-12345)">
-                <button class="action-btn" onclick="handleDoctorVerification()">Verify Account</button>
+
+            <div class="card" id="doctorLogin">
+                <h3 style="margin-bottom: 12px;">Doctor sign in</h3>
+                <input type="email" id="docEmail" autocomplete="email" placeholder="Your email">
+                <input type="password" id="docCode" autocomplete="off" placeholder="Authorization code">
+                <button class="action-btn" id="docLoginBtn" onclick="handleDoctorLogin()">Verify Account</button>
                 <div id="docResult" class="result-box" style="display:none;"></div>
+            </div>
+
+            <div class="card" id="doctorPanel" style="display:none;">
+                <div class="row" style="align-items:center; margin-bottom: 6px;">
+                    <h3>Expert review queue</h3>
+                    <div style="text-align:right; flex: 0 0 auto;">
+                        <span class="muted" id="docWho" style="margin-right: 10px;"></span>
+                        <button class="ghost-btn" onclick="handleDoctorLogout()">Sign out</button>
+                    </div>
+                </div>
+                <p class="muted">Claims searched by users that are not in the verified database yet (most searched first).</p>
+                <div id="claimsList"></div>
             </div>
         </div>
 
-        <!-- Tab 4: Team -->
+        <!-- Tab 4: Community -->
+        <div id="community" class="tab-content">
+            <h2>Join the Verifi Community</h2>
+            <div class="card">
+                <p style="margin-bottom: 12px; color: #94a3b8;">Doctors and patients can register to take part in verifying health information. Free for everyone.</p>
+                <input type="text" id="joinName" maxlength="80" placeholder="Name (optional)">
+                <input type="email" id="joinEmail" autocomplete="email" placeholder="Email">
+                <select id="joinRole">
+                    <option value="patient">I'm a patient / community member</option>
+                    <option value="doctor">I'm a doctor / medical professional</option>
+                </select>
+                <button class="action-btn" id="joinBtn" onclick="handleJoin()">Join</button>
+                <div id="joinResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Team -->
         <div id="team" class="tab-content">
             <h2>Junior Academy Innovation Challenge</h2>
             <div class="card">
@@ -110,90 +165,199 @@
     </div>
 
     <script>
+        // ---- tiny helpers: everything user-controlled is inserted as text, never as HTML ----
+        function el(tag, text, cls) {
+            const n = document.createElement(tag);
+            if (text !== undefined && text !== null) n.textContent = text;
+            if (cls) n.className = cls;
+            return n;
+        }
+        function show(box, kind, ...nodes) {
+            box.className = 'result-box' + (kind ? ' ' + kind : '');
+            box.style.display = 'block';
+            box.replaceChildren(...nodes);
+        }
+        function line(label, value) {
+            const d = el('div');
+            d.append(el('strong', label + ' '), document.createTextNode(value));
+            return d;
+        }
+        async function api(path, body) {
+            const opts = body === undefined ? {} : {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            };
+            const res = await fetch(path, opts);
+            let data = {};
+            try { data = await res.json(); } catch (e) { /* non-JSON error page */ }
+            return { ok: res.ok, status: res.status, data };
+        }
+
         function showTab(tabId, evt) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             evt.currentTarget.classList.add('active');
+            if (tabId === 'doctor') refreshDoctor();
         }
 
-        let stats = { tests: 0, fakes: 0, verified: 0 };
-
-        function updateStatsDisplay() {
-            document.getElementById('totalTests').innerText = stats.tests;
-            document.getElementById('fakeDetected').innerText = stats.fakes;
-            document.getElementById('doctorVerified').innerText = stats.verified;
+        // ---- dashboard (numbers are stored on the server, not in this page) ----
+        async function loadStats() {
+            try {
+                const { data } = await api('/api/stats');
+                document.getElementById('totalTests').innerText = data.total_tests;
+                document.getElementById('fakeDetected').innerText = data.fake_detected;
+                document.getElementById('doctorVerified').innerText = data.verified_facts;
+                document.getElementById('statsExtra').innerText =
+                    data.pending_claims + ' claim(s) waiting for expert review · ' + data.members + ' community member(s)';
+            } catch (e) { /* keep last numbers */ }
         }
 
+        // ---- search ----
         async function handleSearch() {
             const query = document.getElementById('searchInput').value.trim();
-            const resultDiv = document.getElementById('searchResult');
-            
+            const box = document.getElementById('searchResult');
+            const btn = document.getElementById('searchBtn');
             if (!query) return;
-
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = "Searching Flask Backend...";
-
+            btn.disabled = true;
+            show(box, '', el('span', 'Searching...'));
             try {
-                const response = await fetch('/api/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
-                });
-                const data = await response.json();
-                
-                resultDiv.innerHTML = data.result;
-                stats.tests++;
-                if (data.verified) stats.verified++;
-                updateStatsDisplay();
-            } catch (err) {
-                resultDiv.innerHTML = "Error connecting to Python backend server.";
-            }
+                const { ok, data } = await api('/api/search', { query });
+                if (!ok) { show(box, 'bad', el('span', data.error || 'Something went wrong.')); return; }
+                const nodes = [el('span', data.result)];
+                if (data.source) nodes.push(el('div', 'Source: ' + data.source, 'muted'));
+                show(box, data.verified ? 'good' : 'warn', ...nodes);
+                loadStats();
+            } catch (e) {
+                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
+            } finally { btn.disabled = false; }
         }
 
+        // ---- AI detector ----
         async function handleAIDetection() {
             const text = document.getElementById('aiText').value.trim();
-            const resultDiv = document.getElementById('aiResult');
-            
+            const box = document.getElementById('aiResult');
+            const btn = document.getElementById('detectBtn');
             if (!text) return;
-
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = "Analyzing with AI backend...";
-
+            btn.disabled = true;
+            show(box, '', el('span', 'Analyzing...'));
             try {
-                const response = await fetch('/api/detect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
-                });
-                const data = await response.json();
-                
-                resultDiv.innerHTML = `
-                    <strong>Verdict:</strong> ${data.verdict}<br>
-                    <strong>Confidence Score:</strong> ${data.score}<br>
-                    <strong>Risk Level:</strong> ${data.risk_level}
-                `;
-                
-                stats.tests++;
-                if (data.is_fake) stats.fakes++;
-                updateStatsDisplay();
-            } catch (err) {
-                resultDiv.innerHTML = "Error analyzing text with backend.";
+                const { ok, data } = await api('/api/detect', { text });
+                if (!ok) { show(box, 'bad', el('span', data.error || 'Something went wrong.')); return; }
+                if (data.status !== 'ok') { show(box, 'warn', el('span', data.verdict)); return; }
+                const kind = data.risk_level === 'High Risk' ? 'bad' : data.risk_level === 'Uncertain' ? 'warn' : 'good';
+                const nodes = [
+                    line('Verdict:', data.verdict),
+                    line('Risk Level:', data.risk_level),
+                    line('Misinformation likelihood:', data.probability + '%'),
+                ];
+                if (data.drivers && data.drivers.length) nodes.push(line('Words that raised the score:', data.drivers.join(', ')));
+                show(box, kind, ...nodes);
+                loadStats();
+            } catch (e) {
+                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
+            } finally { btn.disabled = false; }
+        }
+
+        async function loadModelNote() {
+            try {
+                const { data } = await api('/api/model-info');
+                document.getElementById('modelNote').innerText =
+                    'How it works: a statistical model trained on ' + data.dataset + ' (' + data.n_samples +
+                    ' texts). On held-out CoAID data it scored ' + Math.round(data.heldout_accuracy * 100) +
+                    '% accuracy (F1 on misinformation ' + data.heldout_f1_misinformation + '). It estimates whether text looks like ' +
+                    'known COVID-19 health misinformation; it does not check facts, and it can be wrong on other topics.';
+            } catch (e) { /* optional text */ }
+        }
+
+        // ---- doctor portal ----
+        async function refreshDoctor() {
+            const { data } = await api('/api/doctor/me');
+            const loggedIn = !!data.logged_in;
+            document.getElementById('doctorLogin').style.display = loggedIn ? 'none' : 'block';
+            document.getElementById('doctorPanel').style.display = loggedIn ? 'block' : 'none';
+            if (loggedIn) {
+                document.getElementById('docWho').innerText = data.email;
+                loadClaims();
             }
         }
 
-        function handleDoctorVerification() {
-            const license = document.getElementById('docLicense').value.trim();
-            const resultDiv = document.getElementById('docResult');
-            resultDiv.style.display = 'block';
-            
-            if (license) {
-                resultDiv.innerHTML = "✅ Medical license verified successfully. Welcome to the Expert Review Panel.";
-            } else {
-                resultDiv.innerHTML = "⚠️ Please enter a valid medical license ID.";
-            }
+        async function handleDoctorLogin() {
+            const email = document.getElementById('docEmail').value.trim();
+            const code = document.getElementById('docCode').value.trim();
+            const box = document.getElementById('docResult');
+            const btn = document.getElementById('docLoginBtn');
+            if (!email || !code) { show(box, 'warn', el('span', 'Please enter your email and authorization code.')); return; }
+            btn.disabled = true;
+            try {
+                const { ok, data } = await api('/api/doctor/login', { email, code });
+                if (!ok) { show(box, 'bad', el('span', data.error || 'Sign in failed.')); return; }
+                document.getElementById('docCode').value = '';
+                box.style.display = 'none';
+                refreshDoctor();
+                loadStats();
+            } catch (e) {
+                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
+            } finally { btn.disabled = false; }
         }
+
+        async function handleDoctorLogout() {
+            await api('/api/doctor/logout', {});
+            refreshDoctor();
+        }
+
+        async function loadClaims() {
+            const list = document.getElementById('claimsList');
+            const { ok, data } = await api('/api/doctor/claims');
+            if (!ok) { list.replaceChildren(el('p', data.error || 'Could not load claims.', 'muted')); return; }
+            if (!data.claims.length) { list.replaceChildren(el('p', 'Nothing waiting for review. 🎉', 'muted')); return; }
+            list.replaceChildren(...data.claims.map(claimCard));
+        }
+
+        function claimCard(c) {
+            const wrap = el('div', null, 'claim-item');
+            wrap.append(el('p', '"' + c.text + '"'), el('p', 'Searched ' + c.hits + ' time(s)', 'muted'));
+            const sel = document.createElement('select');
+            [['accurate', 'Accurate'], ['misleading', 'Misleading'], ['false', 'False']].forEach(([v, t]) => {
+                const o = el('option', t); o.value = v; sel.append(o);
+            });
+            const note = document.createElement('textarea');
+            note.rows = 2; note.maxLength = 1000; note.placeholder = 'Short explanation shown to users (required)';
+            const msg = el('div', null, 'muted');
+            const btn = el('button', 'Submit review', 'action-btn');
+            btn.onclick = async () => {
+                if (!note.value.trim()) { msg.textContent = 'Please add a short explanation.'; return; }
+                btn.disabled = true;
+                const { ok, data } = await api('/api/doctor/review', { claim_id: c.id, verdict: sel.value, note: note.value.trim() });
+                if (ok) { loadClaims(); loadStats(); } else { msg.textContent = data.error || 'Could not save.'; btn.disabled = false; }
+            };
+            wrap.append(sel, note, btn, msg);
+            return wrap;
+        }
+
+        // ---- community ----
+        async function handleJoin() {
+            const box = document.getElementById('joinResult');
+            const btn = document.getElementById('joinBtn');
+            const email = document.getElementById('joinEmail').value.trim();
+            if (!email) { show(box, 'warn', el('span', 'Please enter your email.')); return; }
+            btn.disabled = true;
+            try {
+                const { ok, data } = await api('/api/community/join', {
+                    email, name: document.getElementById('joinName').value.trim(),
+                    role: document.getElementById('joinRole').value
+                });
+                show(box, ok ? 'good' : 'bad', el('span', ok ? data.message : (data.error || 'Could not register.')));
+                if (ok) loadStats();
+            } catch (e) {
+                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
+            } finally { btn.disabled = false; }
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleSearch(); });
+        loadStats();
+        loadModelNote();
     </script>
 </body>
 </html>
