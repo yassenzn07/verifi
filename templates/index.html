@@ -3,361 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifi - AI Misinformation & Health Fact-Checking Hub</title>
+    <title>Verifi - Check health claims before you share them</title>
+    <meta name="description" content="Verifi helps young people check health information, with answers verified by volunteer specialists.">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { display: flex; background-color: #0f1117; color: #e2e8f0; height: 100vh; overflow: hidden; }
+        :root {
+            --bg: #f4f7f6; --surface: #ffffff; --ink: #14211c; --muted: #52645c; --line: #d8e2de;
+            --brand: #0f766e; --brand-ink: #ffffff; --brand-soft: #dff3ef;
+            --good: #067647; --good-soft: #e3f6ec; --warn: #9a5b00; --warn-soft: #fdf0d9;
+            --bad: #b42318; --bad-soft: #fde7e4; --radius: 14px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1412; --surface: #151f1c; --ink: #e5eeea; --muted: #9bafa6; --line: #26352f;
+                --brand: #2dd4bf; --brand-ink: #062521; --brand-soft: #123530;
+                --good: #4ade80; --good-soft: #10301f; --warn: #fbbf24; --warn-soft: #34290c;
+                --bad: #f87171; --bad-soft: #3a1714;
+            }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--ink); line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column;
+               font-family: system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Naskh Arabic", sans-serif; }
+        .wrap { width: 100%; max-width: 780px; margin-inline: auto; padding-inline: 16px; }
 
-        /* Sidebar */
-        .sidebar { width: 260px; background-color: #161922; border-right: 1px solid #2d3748; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .logo { font-size: 24px; font-weight: bold; color: #a855f7; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .nav-btn { background: none; border: none; color: #94a3b8; padding: 12px 16px; border-radius: 8px; text-align: left; font-size: 15px; cursor: pointer; transition: 0.3s; width: 100%; display: flex; align-items: center; gap: 10px; }
-        .nav-btn:hover, .nav-btn.active { background-color: #7e22ce; color: #ffffff; }
+        header { border-bottom: 1px solid var(--line); background: var(--surface); }
+        .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: var(--brand); }
+        .brand small { display: block; font-weight: 400; font-size: .78rem; color: var(--muted); }
+        .lang { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; }
+        .lang:hover { border-color: var(--brand); color: var(--brand); }
 
-        /* Main Content */
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        nav { border-bottom: 1px solid var(--line); background: var(--surface); }
+        .tabs { display: flex; gap: 4px; overflow-x: auto; padding-block: 8px; scrollbar-width: thin; }
+        .tab { background: none; border: none; color: var(--muted); padding: 9px 16px; border-radius: 999px; cursor: pointer; font: inherit; white-space: nowrap; }
+        .tab:hover { color: var(--ink); background: var(--brand-soft); }
+        .tab[aria-selected="true"] { background: var(--brand); color: var(--brand-ink); font-weight: 600; }
 
-        /* Cards and Elements */
-        .card { background-color: #1e2230; border: 1px solid #2d3748; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
-        h2 { color: #c084fc; margin-bottom: 15px; }
-        input, textarea, select { width: 100%; padding: 12px; background-color: #0f1117; border: 1px solid #374151; border-radius: 8px; color: #fff; margin-bottom: 12px; font-size: 14px; }
-        button.action-btn { background-color: #9333ea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button.action-btn:hover { background-color: #7e22ce; }
-        button.action-btn:disabled { opacity: 0.6; cursor: wait; }
-        button.ghost-btn { background: none; color: #94a3b8; border: 1px solid #374151; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-        button.ghost-btn:hover { color: #fff; border-color: #a855f7; }
+        main { flex: 1; padding-block: 24px 40px; }
+        section[hidden] { display: none; }
+        h1 { font-size: 1.6rem; line-height: 1.3; margin-bottom: 8px; }
+        h2 { font-size: 1.15rem; margin-bottom: 8px; }
+        p.lead { color: var(--muted); margin-bottom: 18px; }
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 18px; }
+        label.sr, .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        input, textarea, select { width: 100%; padding: 12px 14px; background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+                                  border-radius: 10px; font: inherit; margin-bottom: 12px; }
+        input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+        .btn { background: var(--brand); color: var(--brand-ink); border: none; border-radius: 10px; padding: 11px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+        .btn:hover { filter: brightness(1.08); }
+        .btn:disabled { opacity: .6; cursor: wait; }
+        .btn.ghost { background: none; color: var(--ink); border: 1px solid var(--line); font-weight: 400; padding: 8px 16px; }
 
-        .result-box { background-color: #111827; border-left: 4px solid #a855f7; padding: 15px; margin-top: 15px; border-radius: 4px; line-height: 1.6; }
-        .result-box.good { border-left-color: #22c55e; }
-        .result-box.warn { border-left-color: #f59e0b; }
-        .result-box.bad { border-left-color: #ef4444; }
-        .muted { color: #94a3b8; font-size: 13px; }
-        .claim-item { background: #111827; border: 1px solid #2d3748; border-radius: 8px; padding: 14px; margin-top: 12px; }
-        .claim-item p { margin-bottom: 10px; }
-        .row { display: flex; gap: 10px; }
-        .row > * { flex: 1; }
+        .result { border-radius: 10px; padding: 14px 16px; margin-top: 14px; border-inline-start: 5px solid var(--brand); background: var(--brand-soft); }
+        .result.good { border-color: var(--good); background: var(--good-soft); }
+        .result.warn { border-color: var(--warn); background: var(--warn-soft); }
+        .result.bad { border-color: var(--bad); background: var(--bad-soft); }
+        .result .title { font-weight: 700; margin-bottom: 4px; }
+        .muted { color: var(--muted); font-size: .9rem; }
 
-        /* Phones: sidebar becomes a top bar */
-        @media (max-width: 760px) {
-            body { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
-            .sidebar { width: 100%; flex-direction: row; align-items: center; gap: 6px; padding: 10px; overflow-x: auto; border-right: none; border-bottom: 1px solid #2d3748; }
-            .logo { margin-bottom: 0; font-size: 20px; }
-            .nav-btn { width: auto; white-space: nowrap; padding: 10px 12px; font-size: 14px; }
-            .main-content { padding: 16px; overflow: visible; }
-            .stat-row { flex-direction: column; }
-            .row { flex-direction: column; gap: 0; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+        .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px; text-align: center; }
+        .stat b { display: block; font-size: 1.8rem; color: var(--brand); line-height: 1.2; }
+        .stat span { font-size: .82rem; color: var(--muted); }
+        .item { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-top: 12px; }
+        .item p { margin-bottom: 8px; }
+        .split { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        ol, ul { padding-inline-start: 22px; margin-bottom: 10px; }
+        li { margin-bottom: 4px; }
+
+        footer { border-top: 1px solid var(--line); background: var(--surface); padding-block: 16px; color: var(--muted); font-size: .85rem; }
+        @media (max-width: 560px) {
+            h1 { font-size: 1.35rem; }
+            .stats { grid-template-columns: 1fr; }
+            .card { padding: 16px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="logo">🧠 Verifi</div>
-        <button class="nav-btn active" onclick="showTab('search', event)">🔍 Search & Verify</button>
-        <button class="nav-btn" onclick="showTab('ai-detector', event)">🤖 AI Detection</button>
-        <button class="nav-btn" onclick="showTab('doctor', event)">🩺 Doctor Portal</button>
-        <button class="nav-btn" onclick="showTab('community', event)">💬 Community</button>
-        <button class="nav-btn" onclick="showTab('team', event)">👥 The Team</button>
+<header>
+    <div class="wrap bar">
+        <div class="brand">
+            <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
+                <path d="M16 3 5 7v8c0 7 4.6 11.7 11 14 6.4-2.3 11-7 11-14V7L16 3Z" fill="currentColor" opacity=".16"/>
+                <path d="M16 3 5 7v8c0 7 4.6 11.7 11 14 6.4-2.3 11-7 11-14V7L16 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="m10.5 16.2 4 4 7-7.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>Verifi<small data-i18n="tagline"></small></div>
+        </div>
+        <button class="lang" id="langBtn" type="button" aria-label="Change language / تغيير اللغة"></button>
     </div>
+</header>
 
-    <!-- Main Content Area -->
-    <div class="main-content">
-
-        <!-- Tab 1: Search & Verify -->
-        <div id="search" class="tab-content active">
-            <h2>Search Health Information</h2>
-            <div class="card">
-                <p style="margin-bottom: 10px; color: #94a3b8;">Search any health claim to check its scientific reliability:</p>
-                <input type="text" id="searchInput" maxlength="300" placeholder="Enter claim (e.g., coffee causes sleeping)...">
-                <button class="action-btn" id="searchBtn" onclick="handleSearch()">Search Database</button>
-                <div id="searchResult" class="result-box" style="display:none;"></div>
-            </div>
-
-            <!-- Live Impact Dashboard (numbers come from the server database) -->
-            <div class="card" style="border: 2px dashed #a855f7; margin-top: 20px;">
-                <h3 style="color: #c084fc; margin-bottom: 10px;">📊 Verifi Impact Dashboard</h3>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">Live metrics on medical misinformation detection (shared by all users):</p>
-
-                <div class="stat-row" style="display: flex; gap: 15px; justify-content: space-around; text-align: center;">
-                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
-                        <span id="totalTests" style="font-size: 24px; font-weight: bold; color: #a855f7;">0</span>
-                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Total Tests</p>
-                    </div>
-                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
-                        <span id="fakeDetected" style="font-size: 24px; font-weight: bold; color: #ef4444;">0</span>
-                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Fake Claims Detected</p>
-                    </div>
-                    <div style="background: #111827; padding: 15px; border-radius: 8px; flex: 1;">
-                        <span id="doctorVerified" style="font-size: 24px; font-weight: bold; color: #22c55e;">0</span>
-                        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Verified Medical Facts</p>
-                    </div>
-                </div>
-                <p id="statsExtra" class="muted" style="margin-top: 12px; text-align: center;"></p>
-            </div>
-        </div>
-
-        <!-- Tab 2: AI Misinformation Detector -->
-        <div id="ai-detector" class="tab-content">
-            <h2>AI Misinformation Detector</h2>
-            <div class="card">
-                <p style="margin-bottom: 10px; color: #94a3b8;">Analyze text or AI-generated medical outputs for hallucinations:</p>
-                <textarea id="aiText" rows="6" maxlength="5000" placeholder="Paste medical text or AI response here..."></textarea>
-                <button class="action-btn" id="detectBtn" onclick="handleAIDetection()">Analyze Text</button>
-                <div id="aiResult" class="result-box" style="display:none;"></div>
-                <p id="modelNote" class="muted" style="margin-top: 14px;"></p>
-            </div>
-        </div>
-
-        <!-- Tab 3: Doctor Portal -->
-        <div id="doctor" class="tab-content">
-            <h2>Medical Expert Verification</h2>
-
-            <div class="card" id="doctorLogin">
-                <h3 style="margin-bottom: 12px;">Doctor sign in</h3>
-                <input type="email" id="docEmail" autocomplete="email" placeholder="Your email">
-                <input type="password" id="docCode" autocomplete="off" placeholder="Authorization code">
-                <button class="action-btn" id="docLoginBtn" onclick="handleDoctorLogin()">Verify Account</button>
-                <div id="docResult" class="result-box" style="display:none;"></div>
-            </div>
-
-            <div class="card" id="doctorPanel" style="display:none;">
-                <div class="row" style="align-items:center; margin-bottom: 6px;">
-                    <h3>Expert review queue</h3>
-                    <div style="text-align:right; flex: 0 0 auto;">
-                        <span class="muted" id="docWho" style="margin-right: 10px;"></span>
-                        <button class="ghost-btn" onclick="handleDoctorLogout()">Sign out</button>
-                    </div>
-                </div>
-                <p class="muted">Claims searched by users that are not in the verified database yet (most searched first).</p>
-                <div id="claimsList"></div>
-            </div>
-        </div>
-
-        <!-- Tab 4: Community -->
-        <div id="community" class="tab-content">
-            <h2>Join the Verifi Community</h2>
-            <div class="card">
-                <p style="margin-bottom: 12px; color: #94a3b8;">Doctors and patients can register to take part in verifying health information. Free for everyone.</p>
-                <input type="text" id="joinName" maxlength="80" placeholder="Name (optional)">
-                <input type="email" id="joinEmail" autocomplete="email" placeholder="Email">
-                <select id="joinRole">
-                    <option value="patient">I'm a patient / community member</option>
-                    <option value="doctor">I'm a doctor / medical professional</option>
-                </select>
-                <button class="action-btn" id="joinBtn" onclick="handleJoin()">Join</button>
-                <div id="joinResult" class="result-box" style="display:none;"></div>
-            </div>
-        </div>
-
-        <!-- Tab 5: Team -->
-        <div id="team" class="tab-content">
-            <h2>Junior Academy Innovation Challenge</h2>
-            <div class="card">
-                <h3>Verifi Team Members</h3>
-                <p style="color: #c084fc; margin-top: 10px; font-size: 16px;">Yassen, Eva, Ayinezo, Nour, Hassan, Jana</p>
-                <p style="color: #94a3b8; margin-top: 10px;">Built to detect, flag, and neutralize health misinformation and AI-generated medical hallucinations.</p>
-            </div>
-        </div>
-
+<nav aria-label="Main">
+    <div class="wrap tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-ask" data-tab="ask" data-i18n="nav_ask" type="button"></button>
+        <button class="tab" role="tab" id="tab-check" data-tab="check" data-i18n="nav_check" type="button"></button>
+        <button class="tab" role="tab" id="tab-spec" data-tab="spec" data-i18n="nav_spec" type="button"></button>
+        <button class="tab" role="tab" id="tab-join" data-tab="join" data-i18n="nav_join" type="button"></button>
+        <button class="tab" role="tab" id="tab-about" data-tab="about" data-i18n="nav_about" type="button"></button>
     </div>
+</nav>
 
-    <script>
-        // ---- tiny helpers: everything user-controlled is inserted as text, never as HTML ----
-        function el(tag, text, cls) {
-            const n = document.createElement(tag);
-            if (text !== undefined && text !== null) n.textContent = text;
-            if (cls) n.className = cls;
-            return n;
-        }
-        function show(box, kind, ...nodes) {
-            box.className = 'result-box' + (kind ? ' ' + kind : '');
-            box.style.display = 'block';
-            box.replaceChildren(...nodes);
-        }
-        function line(label, value) {
-            const d = el('div');
-            d.append(el('strong', label + ' '), document.createTextNode(value));
-            return d;
-        }
-        async function api(path, body) {
-            const opts = body === undefined ? {} : {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            };
-            const res = await fetch(path, opts);
-            let data = {};
-            try { data = await res.json(); } catch (e) { /* non-JSON error page */ }
-            return { ok: res.ok, status: res.status, data };
-        }
+<main class="wrap">
 
-        function showTab(tabId, evt) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            evt.currentTarget.classList.add('active');
-            if (tabId === 'doctor') refreshDoctor();
-        }
+    <!-- Ask -->
+    <section id="ask" role="tabpanel" aria-labelledby="tab-ask">
+        <h1 data-i18n="ask_h"></h1>
+        <p class="lead" data-i18n="ask_p"></p>
+        <div class="card">
+            <label class="sr" for="searchInput" data-i18n="ask_h"></label>
+            <input type="text" id="searchInput" maxlength="300" data-i18n-ph="ask_ph">
+            <button class="btn" id="searchBtn" type="button" data-i18n="ask_btn"></button>
+            <div id="searchResult" class="result" aria-live="polite" hidden></div>
+        </div>
+        <div class="card">
+            <h2 data-i18n="stats_h"></h2>
+            <div class="stats">
+                <div class="stat"><b id="statTotal">0</b><span data-i18n="stat_total"></span></div>
+                <div class="stat"><b id="statFlagged">0</b><span data-i18n="stat_flagged"></span></div>
+                <div class="stat"><b id="statVerified">0</b><span data-i18n="stat_verified"></span></div>
+            </div>
+            <p class="muted" id="statsExtra" style="margin-top:12px; text-align:center;"></p>
+        </div>
+    </section>
 
-        // ---- dashboard (numbers are stored on the server, not in this page) ----
-        async function loadStats() {
-            try {
-                const { data } = await api('/api/stats');
-                document.getElementById('totalTests').innerText = data.total_tests;
-                document.getElementById('fakeDetected').innerText = data.fake_detected;
-                document.getElementById('doctorVerified').innerText = data.verified_facts;
-                document.getElementById('statsExtra').innerText =
-                    data.pending_claims + ' claim(s) waiting for expert review · ' + data.members + ' community member(s)';
-            } catch (e) { /* keep last numbers */ }
-        }
+    <!-- Check a text -->
+    <section id="check" role="tabpanel" aria-labelledby="tab-check" hidden>
+        <h1 data-i18n="check_h"></h1>
+        <p class="lead" data-i18n="check_p"></p>
+        <div class="card">
+            <label class="sr" for="aiText" data-i18n="check_h"></label>
+            <textarea id="aiText" rows="7" maxlength="5000" data-i18n-ph="check_ph" dir="auto"></textarea>
+            <button class="btn" id="detectBtn" type="button" data-i18n="check_btn"></button>
+            <div id="aiResult" class="result" aria-live="polite" hidden></div>
+            <p class="muted" id="modelNote" style="margin-top:14px;"></p>
+        </div>
+    </section>
 
-        // ---- search ----
-        async function handleSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            const box = document.getElementById('searchResult');
-            const btn = document.getElementById('searchBtn');
-            if (!query) return;
-            btn.disabled = true;
-            show(box, '', el('span', 'Searching...'));
-            try {
-                const { ok, data } = await api('/api/search', { query });
-                if (!ok) { show(box, 'bad', el('span', data.error || 'Something went wrong.')); return; }
-                const nodes = [el('span', data.result)];
-                if (data.source) nodes.push(el('div', 'Source: ' + data.source, 'muted'));
-                show(box, data.verified ? 'good' : 'warn', ...nodes);
-                loadStats();
-            } catch (e) {
-                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
-            } finally { btn.disabled = false; }
-        }
+    <!-- Specialists -->
+    <section id="spec" role="tabpanel" aria-labelledby="tab-spec" hidden>
+        <h1 data-i18n="spec_h"></h1>
+        <p class="lead" data-i18n="spec_p"></p>
 
-        // ---- AI detector ----
-        async function handleAIDetection() {
-            const text = document.getElementById('aiText').value.trim();
-            const box = document.getElementById('aiResult');
-            const btn = document.getElementById('detectBtn');
-            if (!text) return;
-            btn.disabled = true;
-            show(box, '', el('span', 'Analyzing...'));
-            try {
-                const { ok, data } = await api('/api/detect', { text });
-                if (!ok) { show(box, 'bad', el('span', data.error || 'Something went wrong.')); return; }
-                if (data.status !== 'ok') { show(box, 'warn', el('span', data.verdict)); return; }
-                const kind = data.risk_level === 'High Risk' ? 'bad' : data.risk_level === 'Uncertain' ? 'warn' : 'good';
-                const nodes = [
-                    line('Verdict:', data.verdict),
-                    line('Risk Level:', data.risk_level),
-                    line('Misinformation likelihood:', data.probability + '%'),
-                ];
-                if (data.drivers && data.drivers.length) nodes.push(line('Words that raised the score:', data.drivers.join(', ')));
-                show(box, kind, ...nodes);
-                loadStats();
-            } catch (e) {
-                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
-            } finally { btn.disabled = false; }
-        }
+        <div class="card" id="docLogin">
+            <label class="sr" for="docEmail" data-i18n="spec_email"></label>
+            <input type="email" id="docEmail" autocomplete="email" data-i18n-ph="spec_email" dir="ltr">
+            <label class="sr" for="docCode" data-i18n="spec_code"></label>
+            <input type="password" id="docCode" autocomplete="off" data-i18n-ph="spec_code" dir="ltr">
+            <button class="btn" id="docLoginBtn" type="button" data-i18n="spec_btn"></button>
+            <div id="docResult" class="result" aria-live="polite" hidden></div>
+        </div>
 
-        async function loadModelNote() {
-            try {
-                const { data } = await api('/api/model-info');
-                document.getElementById('modelNote').innerText =
-                    'How it works: a statistical model trained on ' + data.dataset + ' (' + data.n_samples +
-                    ' texts). On held-out CoAID data it scored ' + Math.round(data.heldout_accuracy * 100) +
-                    '% accuracy (F1 on misinformation ' + data.heldout_f1_misinformation + '). It estimates whether text looks like ' +
-                    'known COVID-19 health misinformation; it does not check facts, and it can be wrong on other topics.';
-            } catch (e) { /* optional text */ }
-        }
+        <div class="card" id="docPanel" hidden>
+            <div class="split">
+                <h2 data-i18n="spec_queue_h"></h2>
+                <div><span class="muted" id="docWho"></span> <button class="btn ghost" id="docLogoutBtn" type="button" data-i18n="spec_signout"></button></div>
+            </div>
+            <p class="muted" data-i18n="spec_queue_p"></p>
+            <div id="claimsList"></div>
+        </div>
+    </section>
 
-        // ---- doctor portal ----
-        async function refreshDoctor() {
-            const { data } = await api('/api/doctor/me');
-            const loggedIn = !!data.logged_in;
-            document.getElementById('doctorLogin').style.display = loggedIn ? 'none' : 'block';
-            document.getElementById('doctorPanel').style.display = loggedIn ? 'block' : 'none';
-            if (loggedIn) {
-                document.getElementById('docWho').innerText = data.email;
-                loadClaims();
-            }
-        }
+    <!-- Join -->
+    <section id="join" role="tabpanel" aria-labelledby="tab-join" hidden>
+        <h1 data-i18n="join_h"></h1>
+        <p class="lead" data-i18n="join_p"></p>
+        <div class="card">
+            <label class="sr" for="joinName" data-i18n="join_name"></label>
+            <input type="text" id="joinName" maxlength="80" data-i18n-ph="join_name" autocomplete="name">
+            <label class="sr" for="joinEmail" data-i18n="join_email"></label>
+            <input type="email" id="joinEmail" autocomplete="email" data-i18n-ph="join_email" dir="ltr">
+            <label class="sr" for="joinRole" data-i18n="join_role"></label>
+            <select id="joinRole">
+                <option value="patient" data-i18n="join_role_patient"></option>
+                <option value="doctor" data-i18n="join_role_doctor"></option>
+            </select>
+            <button class="btn" id="joinBtn" type="button" data-i18n="join_btn"></button>
+            <div id="joinResult" class="result" aria-live="polite" hidden></div>
+        </div>
+    </section>
 
-        async function handleDoctorLogin() {
-            const email = document.getElementById('docEmail').value.trim();
-            const code = document.getElementById('docCode').value.trim();
-            const box = document.getElementById('docResult');
-            const btn = document.getElementById('docLoginBtn');
-            if (!email || !code) { show(box, 'warn', el('span', 'Please enter your email and authorization code.')); return; }
-            btn.disabled = true;
-            try {
-                const { ok, data } = await api('/api/doctor/login', { email, code });
-                if (!ok) { show(box, 'bad', el('span', data.error || 'Sign in failed.')); return; }
-                document.getElementById('docCode').value = '';
-                box.style.display = 'none';
-                refreshDoctor();
-                loadStats();
-            } catch (e) {
-                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
-            } finally { btn.disabled = false; }
-        }
+    <!-- About -->
+    <section id="about" role="tabpanel" aria-labelledby="tab-about" hidden>
+        <h1 data-i18n="about_h"></h1>
+        <p class="lead" data-i18n="about_p"></p>
+        <div class="card">
+            <h2 data-i18n="how_h"></h2>
+            <ol>
+                <li data-i18n="how_1"></li>
+                <li data-i18n="how_2"></li>
+                <li data-i18n="how_3"></li>
+            </ol>
+        </div>
+        <div class="card">
+            <h2 data-i18n="limits_h"></h2>
+            <ul>
+                <li data-i18n="limits_1"></li>
+                <li data-i18n="limits_2"></li>
+                <li data-i18n="limits_3"></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2 data-i18n="team_h"></h2>
+            <p dir="ltr" style="font-weight:600;" id="teamNames">{{ team | join(', ') }}</p>
+            <p class="muted" data-i18n="team_p"></p>
+        </div>
+    </section>
 
-        async function handleDoctorLogout() {
-            await api('/api/doctor/logout', {});
-            refreshDoctor();
-        }
+</main>
 
-        async function loadClaims() {
-            const list = document.getElementById('claimsList');
-            const { ok, data } = await api('/api/doctor/claims');
-            if (!ok) { list.replaceChildren(el('p', data.error || 'Could not load claims.', 'muted')); return; }
-            if (!data.claims.length) { list.replaceChildren(el('p', 'Nothing waiting for review. 🎉', 'muted')); return; }
-            list.replaceChildren(...data.claims.map(claimCard));
-        }
+<footer>
+    <div class="wrap" data-i18n="footer"></div>
+</footer>
 
-        function claimCard(c) {
-            const wrap = el('div', null, 'claim-item');
-            wrap.append(el('p', '"' + c.text + '"'), el('p', 'Searched ' + c.hits + ' time(s)', 'muted'));
-            const sel = document.createElement('select');
-            [['accurate', 'Accurate'], ['misleading', 'Misleading'], ['false', 'False']].forEach(([v, t]) => {
-                const o = el('option', t); o.value = v; sel.append(o);
-            });
-            const note = document.createElement('textarea');
-            note.rows = 2; note.maxLength = 1000; note.placeholder = 'Short explanation shown to users (required)';
-            const msg = el('div', null, 'muted');
-            const btn = el('button', 'Submit review', 'action-btn');
-            btn.onclick = async () => {
-                if (!note.value.trim()) { msg.textContent = 'Please add a short explanation.'; return; }
-                btn.disabled = true;
-                const { ok, data } = await api('/api/doctor/review', { claim_id: c.id, verdict: sel.value, note: note.value.trim() });
-                if (ok) { loadClaims(); loadStats(); } else { msg.textContent = data.error || 'Could not save.'; btn.disabled = false; }
-            };
-            wrap.append(sel, note, btn, msg);
-            return wrap;
+<script>
+    // ================= translations =================
+    const STR = {
+        en: {
+            tagline: "Health claims, checked before you share them",
+            nav_ask: "Ask", nav_check: "Check a text", nav_spec: "Specialists", nav_join: "Join", nav_about: "About",
+            lang_btn: "عربي",
+            ask_h: "Ask a health question",
+            ask_p: "Type a health question, or something you read online. If a specialist-verified answer exists you will see it with its source. If not, we send it to a volunteer specialist to review.",
+            ask_ph: "e.g. does coffee cause sleeping?", ask_btn: "Check", ask_loading: "Checking...",
+            search_verified: "Verified answer", search_source: "Source:", search_pending: "Not verified yet",
+            search_queued: "We don't have a verified answer yet. Your question was saved and a volunteer specialist will review it. Until then, please don't rely on it.",
+            search_queue_full: "We don't have a verified answer yet, and the review queue is very busy right now. Please try again later.",
+            search_empty: "Please write a question using words.",
+            stats_h: "Verifi so far", stat_total: "Checks made", stat_flagged: "Texts flagged as likely misinformation",
+            stat_verified: "Questions answered from the verified database",
+            stat_extra: "{pending} question(s) waiting for a specialist · {members} community member(s)",
+            check_h: "Check a text",
+            check_p: "Paste a health text, for example an answer from an AI chatbot or a social media post. Verifi estimates how much it looks like known health misinformation. It does not check facts, and for now it works for English text only.",
+            check_ph: "Paste the text here (at least 8 words)...", check_btn: "Analyze", check_loading: "Analyzing...",
+            det_insufficient: "Not enough text. Please paste at least 8 words. No score was produced.",
+            det_unsupported: "The text checker understands English health text only for now, so it gave no score. You can still ask your question on the Ask page.",
+            risk_high: "High risk", risk_uncertain: "Uncertain", risk_low: "Low risk",
+            verdict_high: "This text strongly resembles known health misinformation.",
+            verdict_uncertain: "Mixed signals. Treat it as unverified and ask a specialist.",
+            verdict_low: "No strong misinformation patterns found. This does NOT prove the text is true.",
+            det_score: "Misinformation likelihood", det_words: "Words that raised the score",
+            model_note: "How it works: a small statistical model trained on {dataset} ({n} texts of COVID-19 health news and claims). On texts it had never seen it was right {acc}% of the time (F1 {f1} for the misinformation class). It can be wrong, especially on other health topics.",
+            spec_h: "For specialists",
+            spec_p: "Doctors and medical professionals can sign in with an authorization code to review the questions users asked.",
+            spec_email: "Your email", spec_code: "Authorization code", spec_btn: "Sign in",
+            spec_queue_h: "Review queue", spec_queue_p: "Questions that are not in the verified database yet, most asked first.",
+            spec_signout: "Sign out", spec_empty: "Nothing is waiting for review.", spec_asked: "Asked {n} time(s)",
+            verdict_accurate: "Accurate", verdict_misleading: "Misleading", verdict_false: "False",
+            spec_note_ph: "Short explanation users will see (required)", spec_src_ph: "Source, such as a guideline or leaflet (optional)",
+            spec_submit: "Save review", spec_need_note: "Please add a short explanation.",
+            join_h: "Join the community",
+            join_p: "Doctors and patients can register to help make health information more reliable. Free for everyone. We only store your email and the name you type.",
+            join_name: "Name (optional)", join_email: "Email", join_role: "Role",
+            join_role_patient: "I'm a patient or community member", join_role_doctor: "I'm a doctor or medical professional",
+            join_btn: "Join",
+            join_joined: "You're in! Thanks for joining the Verifi community.",
+            join_joined_doctor: "Registered. To unlock the review tools, sign in on the Specialists page with your authorization code.",
+            join_already: "This email is already registered. Welcome back!",
+            join_need_email: "Please enter your email.",
+            about_h: "About Verifi",
+            about_p: "Verifi helps young people check health information before they trust or share it, and gives volunteer specialists a way to answer the questions that keep coming up.",
+            how_h: "How it works",
+            how_1: "You ask a health question.",
+            how_2: "If a specialist-verified answer exists, you get it with its source.",
+            how_3: "If not, the question goes to a volunteer specialist, and their answer helps the next person who asks.",
+            limits_h: "What Verifi can't do",
+            limits_1: "It does not replace a doctor. For symptoms or treatment, see a healthcare professional.",
+            limits_2: "The verified database is small. It grows as specialists review questions.",
+            limits_3: "The text checker is a statistical estimate, not a fact-check, and understands English only for now.",
+            team_h: "Team", team_p: "Junior Academy Innovation Challenge · Team 7122",
+            footer: "Verifi gives general information, not medical advice.",
+            err_too_long: "That is too long. Please shorten it.", err_bad_email: "Please enter a valid email address.",
+            err_invalid_login: "Wrong email or authorization code.", err_throttled: "Too many failed attempts. Please wait a few minutes.",
+            err_missing: "Enter your email and authorization code.", err_need_login: "Please sign in first.",
+            err_need_note: "Please add a short explanation.", err_not_found: "That question was already reviewed.",
+            err_network: "Could not reach the server. Please try again.", err_generic: "Something went wrong."
+        },
+        ar: {
+            tagline: "معلومات صحية نتحقق منها قبل أن تشاركها",
+            nav_ask: "اسأل", nav_check: "افحص نصًا", nav_spec: "المتخصصون", nav_join: "انضم", nav_about: "عن Verifi",
+            lang_btn: "English",
+            ask_h: "اسأل سؤالًا صحيًا",
+            ask_p: "اكتب سؤالًا صحيًا أو معلومة قرأتها على الإنترنت. إن وُجدت إجابة موثّقة من متخصص سنعرضها مع مصدرها، وإن لم توجد نرسلها إلى متخصص متطوع لمراجعتها.",
+            ask_ph: "مثال: هل القهوة تسبب النوم؟", ask_btn: "تحقق", ask_loading: "جارٍ التحقق...",
+            search_verified: "إجابة موثّقة", search_source: "المصدر:", search_pending: "غير موثّق بعد",
+            search_queued: "ليست لدينا إجابة موثّقة بعد. حفظنا سؤالك وسيراجعه متخصص متطوع. إلى ذلك الحين لا تعتمد عليه.",
+            search_queue_full: "ليست لدينا إجابة موثّقة بعد، وقائمة المراجعة مزدحمة الآن. حاول مرة أخرى لاحقًا.",
+            search_empty: "اكتب سؤالًا بكلمات من فضلك.",
+            stats_h: "حصيلة Verifi حتى الآن", stat_total: "عمليات التحقق", stat_flagged: "نصوص مصنّفة كمعلومات مضللة محتملة",
+            stat_verified: "أسئلة أجابت عنها قاعدة البيانات الموثّقة",
+            stat_extra: "{pending} سؤال بانتظار متخصص · {members} عضو في المجتمع",
+            check_h: "افحص نصًا",
+            check_p: "الصق نصًا صحيًا، مثل إجابة من روبوت دردشة أو منشور على وسائل التواصل. يقدّر Verifi مدى شبهه بالمعلومات الصحية المضللة المعروفة. هو لا يتحقق من صحة الحقائق، ويعمل حاليًا مع النصوص الإنجليزية فقط.",
+            check_ph: "الصق النص هنا (8 كلمات على الأقل)...", check_btn: "حلّل", check_loading: "جارٍ التحليل...",
+            det_insufficient: "النص قصير جدًا. الصق 8 كلمات على الأقل. لم تظهر أي نتيجة.",
+            det_unsupported: "يفهم فاحص النصوص النصوص الصحية الإنجليزية فقط حاليًا، لذلك لم يعطِ نتيجة. يمكنك طرح سؤالك في صفحة «اسأل».",
+            risk_high: "خطورة عالية", risk_uncertain: "غير مؤكد", risk_low: "خطورة منخفضة",
+            verdict_high: "هذا النص يشبه إلى حد كبير المعلومات الصحية المضللة المعروفة.",
+            verdict_uncertain: "إشارات متضاربة. اعتبره غير موثّق واسأل متخصصًا.",
+            verdict_low: "لم نجد أنماطًا قوية للمعلومات المضللة. هذا لا يثبت أن النص صحيح.",
+            det_score: "احتمال أن يكون مضللًا", det_words: "كلمات رفعت النتيجة",
+            model_note: "كيف يعمل: نموذج إحصائي صغير تدرّب على {dataset} ({n} نصًا من أخبار وادعاءات كوفيد-19 الصحية). على نصوص لم يرَها من قبل كانت إجاباته صحيحة بنسبة {acc}% (قيمة F1 للمعلومات المضللة {f1}). قد يخطئ، خاصة في مواضيع صحية أخرى.",
+            spec_h: "للمتخصصين",
+            spec_p: "يمكن للأطباء والعاملين في المجال الطبي تسجيل الدخول برمز التفويض لمراجعة أسئلة المستخدمين.",
+            spec_email: "بريدك الإلكتروني", spec_code: "رمز التفويض", spec_btn: "تسجيل الدخول",
+            spec_queue_h: "قائمة المراجعة", spec_queue_p: "أسئلة ليست في قاعدة البيانات الموثّقة بعد، الأكثر تكرارًا أولًا.",
+            spec_signout: "تسجيل الخروج", spec_empty: "لا شيء بانتظار المراجعة.", spec_asked: "سُئل {n} مرة",
+            verdict_accurate: "صحيحة", verdict_misleading: "مضللة", verdict_false: "خاطئة",
+            spec_note_ph: "شرح قصير سيراه المستخدمون (مطلوب)", spec_src_ph: "المصدر، مثل دليل إرشادي أو نشرة (اختياري)",
+            spec_submit: "حفظ المراجعة", spec_need_note: "أضف شرحًا قصيرًا من فضلك.",
+            join_h: "انضم إلى المجتمع",
+            join_p: "يمكن للأطباء والمرضى التسجيل للمساعدة في جعل المعلومات الصحية أكثر موثوقية. مجاني للجميع. نحفظ فقط بريدك الإلكتروني والاسم الذي تكتبه.",
+            join_name: "الاسم (اختياري)", join_email: "البريد الإلكتروني", join_role: "الصفة",
+            join_role_patient: "أنا مريض أو فرد من المجتمع", join_role_doctor: "أنا طبيب أو عامل في المجال الطبي",
+            join_btn: "انضم",
+            join_joined: "تم تسجيلك! شكرًا لانضمامك إلى مجتمع Verifi.",
+            join_joined_doctor: "تم التسجيل. لفتح أدوات المراجعة سجّل الدخول من صفحة «المتخصصون» برمز التفويض.",
+            join_already: "هذا البريد مسجّل بالفعل. أهلًا بعودتك!",
+            join_need_email: "أدخل بريدك الإلكتروني من فضلك.",
+            about_h: "عن Verifi",
+            about_p: "يساعد Verifi الشباب على التحقق من المعلومات الصحية قبل تصديقها أو مشاركتها، ويمنح المتخصصين المتطوعين وسيلة للإجابة عن الأسئلة التي تتكرر.",
+            how_h: "كيف يعمل",
+            how_1: "تطرح سؤالًا صحيًا.",
+            how_2: "إن وُجدت إجابة موثّقة من متخصص تحصل عليها مع مصدرها.",
+            how_3: "وإن لم توجد، يذهب السؤال إلى متخصص متطوع، وتفيد إجابته من يسأل بعدك.",
+            limits_h: "ما لا يستطيعه Verifi",
+            limits_1: "لا يغني عن الطبيب. للأعراض أو العلاج راجع مختصًا صحيًا.",
+            limits_2: "قاعدة البيانات الموثّقة صغيرة، وتكبر كلما راجع المتخصصون الأسئلة.",
+            limits_3: "فاحص النصوص تقدير إحصائي وليس تدقيقًا للحقائق، ويفهم الإنجليزية فقط حاليًا.",
+            team_h: "الفريق", team_p: "تحدي الابتكار في Junior Academy · الفريق 7122",
+            footer: "يقدّم Verifi معلومات عامة وليس نصيحة طبية.",
+            err_too_long: "النص طويل جدًا. اختصره من فضلك.", err_bad_email: "أدخل بريدًا إلكترونيًا صحيحًا.",
+            err_invalid_login: "البريد أو رمز التفويض غير صحيح.", err_throttled: "محاولات فاشلة كثيرة. انتظر بضع دقائق.",
+            err_missing: "أدخل بريدك ورمز التفويض.", err_need_login: "سجّل الدخول أولًا.",
+            err_need_note: "أضف شرحًا قصيرًا من فضلك.", err_not_found: "تمت مراجعة هذا السؤال بالفعل.",
+            err_network: "تعذّر الوصول إلى الخادم. حاول مرة أخرى.", err_generic: "حدث خطأ ما."
         }
+    };
 
-        // ---- community ----
-        async function handleJoin() {
-            const box = document.getElementById('joinResult');
-            const btn = document.getElementById('joinBtn');
-            const email = document.getElementById('joinEmail').value.trim();
-            if (!email) { show(box, 'warn', el('span', 'Please enter your email.')); return; }
-            btn.disabled = true;
-            try {
-                const { ok, data } = await api('/api/community/join', {
-                    email, name: document.getElementById('joinName').value.trim(),
-                    role: document.getElementById('joinRole').value
-                });
-                show(box, ok ? 'good' : 'bad', el('span', ok ? data.message : (data.error || 'Could not register.')));
-                if (ok) loadStats();
-            } catch (e) {
-                show(box, 'bad', el('span', 'Could not reach the server. Please try again.'));
-            } finally { btn.disabled = false; }
+    let lang = 'en';
+    function t(key, params) {
+        let s = (STR[lang] && STR[lang][key]) || STR.en[key] || key;
+        if (params) for (const k in params) s = s.split('{' + k + '}').join(params[k]);
+        return s;
+    }
+    function errText(data) { return (data && data.code && STR.en['err_' + data.code]) ? t('err_' + data.code) : t('err_generic'); }
+
+    // ================= small DOM helpers (user text is always inserted as text, never as HTML) =================
+    const $ = id => document.getElementById(id);
+    function el(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined && text !== null) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+    }
+    function showResult(box, kind, ...nodes) {
+        box.className = 'result' + (kind ? ' ' + kind : '');
+        box.hidden = false;
+        box.replaceChildren(...nodes);
+    }
+    async function api(path, body) {
+        const opts = body === undefined ? {} : {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        };
+        const res = await fetch(path, opts);
+        let data = {};
+        try { data = await res.json(); } catch (e) { /* non-JSON error page */ }
+        return { ok: res.ok, status: res.status, data };
+    }
+    async function guarded(btn, fn, box) {
+        btn.disabled = true;
+        try { await fn(); }
+        catch (e) { if (box) showResult(box, 'bad', el('div', t('err_network'))); }
+        finally { btn.disabled = false; }
+    }
+
+    // ================= language =================
+    function applyLang() {
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+        document.querySelectorAll('[data-i18n-ph]').forEach(n => { n.placeholder = t(n.dataset.i18nPh); });
+        $('langBtn').textContent = t('lang_btn');
+        ['searchResult', 'aiResult', 'docResult', 'joinResult'].forEach(id => { $(id).hidden = true; });
+        renderStats(); loadModelNote();
+        if (!$('docPanel').hidden) loadClaims();
+    }
+    function setLang(l) {
+        lang = l;
+        try { localStorage.setItem('verifi-lang', l); } catch (e) { /* private mode */ }
+        applyLang();
+    }
+    $('langBtn').addEventListener('click', () => setLang(lang === 'ar' ? 'en' : 'ar'));
+
+    // ================= tabs =================
+    // Links look like  /#t-about . The "t-" prefix matters: a bare "#about" would make the browser
+    // scroll down to the element with that id and hide the page header on phones.
+    const TABS = ['ask', 'check', 'spec', 'join', 'about'];
+    function tabFromHash() {
+        const id = location.hash.replace('#t-', '');
+        return TABS.includes(id) ? id : null;
+    }
+    function showTab(id, writeHash) {
+        document.querySelectorAll('section[role=tabpanel]').forEach(s => { s.hidden = s.id !== id; });
+        document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === id)));
+        if (id === 'spec') refreshDoctor();
+        if (writeHash && location.hash !== '#t-' + id) history.replaceState(null, '', '#t-' + id);
+    }
+    document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab, true)));
+
+    // ================= stats =================
+    let lastStats = null;
+    function renderStats() {
+        if (!lastStats) return;
+        $('statTotal').textContent = lastStats.total_tests;
+        $('statFlagged').textContent = lastStats.fake_detected;
+        $('statVerified').textContent = lastStats.verified_facts;
+        $('statsExtra').textContent = t('stat_extra', { pending: lastStats.pending_claims, members: lastStats.members });
+    }
+    async function loadStats() {
+        try { lastStats = (await api('/api/stats')).data; renderStats(); } catch (e) { /* keep last numbers */ }
+    }
+
+    // ================= ask =================
+    async function handleSearch() {
+        const query = $('searchInput').value.trim();
+        const box = $('searchResult');
+        if (!query) return;
+        showResult(box, '', el('div', t('ask_loading')));
+        const { ok, data } = await api('/api/search', { query });
+        if (!ok) { showResult(box, 'bad', el('div', errText(data))); return; }
+        if (data.code === 'verified') {
+            const nodes = [el('div', t('search_verified'), 'title'), el('div', data.answer)];
+            if (data.source) nodes.push(el('div', t('search_source') + ' ' + data.source, 'muted'));
+            showResult(box, 'good', ...nodes);
+        } else if (data.code === 'empty') {
+            showResult(box, 'warn', el('div', t('search_empty')));
+        } else {
+            showResult(box, 'warn', el('div', t('search_pending'), 'title'),
+                       el('div', t(data.code === 'queue_full' ? 'search_queue_full' : 'search_queued')));
         }
-
-        document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleSearch(); });
         loadStats();
-        loadModelNote();
-    </script>
+    }
+    $('searchBtn').addEventListener('click', () => guarded($('searchBtn'), handleSearch, $('searchResult')));
+    $('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('searchBtn').click(); });
+
+    // ================= text checker =================
+    async function handleDetect() {
+        const text = $('aiText').value.trim();
+        const box = $('aiResult');
+        if (!text) return;
+        showResult(box, '', el('div', t('check_loading')));
+        const { ok, data } = await api('/api/detect', { text });
+        if (!ok) { showResult(box, 'bad', el('div', errText(data))); return; }
+        if (data.status === 'insufficient') { showResult(box, 'warn', el('div', t('det_insufficient'))); return; }
+        if (data.status === 'unsupported') { showResult(box, 'warn', el('div', t('det_unsupported'))); return; }
+        if (data.status !== 'ok') { showResult(box, 'warn', el('div', t('err_generic'))); return; }
+        const kind = data.risk === 'high' ? 'bad' : data.risk === 'uncertain' ? 'warn' : 'good';
+        const nodes = [el('div', t('risk_' + data.risk), 'title'), el('div', t('verdict_' + data.risk)),
+                       el('div', t('det_score') + ': ' + data.probability + '%', 'muted')];
+        if (data.drivers && data.drivers.length) {
+            const d = el('div', t('det_words') + ': ', 'muted');
+            const w = el('span', data.drivers.join(', ')); w.dir = 'ltr';
+            d.append(w); nodes.push(d);
+        }
+        showResult(box, kind, ...nodes);
+        loadStats();
+    }
+    $('detectBtn').addEventListener('click', () => guarded($('detectBtn'), handleDetect, $('aiResult')));
+
+    async function loadModelNote() {
+        try {
+            const { data } = await api('/api/model-info');
+            $('modelNote').textContent = t('model_note', {
+                dataset: data.dataset, n: data.n_samples,
+                acc: Math.round(data.heldout_accuracy * 100), f1: data.heldout_f1_misinformation });
+        } catch (e) { /* optional text */ }
+    }
+
+    // ================= specialists =================
+    async function refreshDoctor() {
+        const { data } = await api('/api/doctor/me');
+        const on = !!data.logged_in;
+        $('docLogin').hidden = on;
+        $('docPanel').hidden = !on;
+        if (on) { $('docWho').textContent = data.email; loadClaims(); }
+    }
+    async function handleDoctorLogin() {
+        const email = $('docEmail').value.trim(), code = $('docCode').value.trim(), box = $('docResult');
+        if (!email || !code) { showResult(box, 'warn', el('div', t('err_missing'))); return; }
+        const { ok, data } = await api('/api/doctor/login', { email, code });
+        if (!ok) { showResult(box, 'bad', el('div', errText(data))); return; }
+        $('docCode').value = ''; box.hidden = true;
+        refreshDoctor(); loadStats();
+    }
+    $('docLoginBtn').addEventListener('click', () => guarded($('docLoginBtn'), handleDoctorLogin, $('docResult')));
+    $('docCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('docLoginBtn').click(); });
+    $('docLogoutBtn').addEventListener('click', async () => { await api('/api/doctor/logout', {}); refreshDoctor(); });
+
+    async function loadClaims() {
+        const list = $('claimsList');
+        const { ok, data } = await api('/api/doctor/claims');
+        if (!ok) { list.replaceChildren(el('p', errText(data), 'muted')); return; }
+        if (!data.claims.length) { list.replaceChildren(el('p', t('spec_empty'), 'muted')); return; }
+        list.replaceChildren(...data.claims.map(claimCard));
+    }
+    function claimCard(c) {
+        const wrap = el('div', null, 'item');
+        const q = el('p', c.text); q.dir = 'auto'; q.style.fontWeight = '600';
+        wrap.append(q, el('p', t('spec_asked', { n: c.hits }), 'muted'));
+        const sel = document.createElement('select');
+        ['accurate', 'misleading', 'false'].forEach(v => { const o = el('option', t('verdict_' + v)); o.value = v; sel.append(o); });
+        const note = document.createElement('textarea');
+        note.rows = 2; note.maxLength = 1000; note.placeholder = t('spec_note_ph'); note.dir = 'auto';
+        const src = document.createElement('input');
+        src.type = 'text'; src.maxLength = 300; src.placeholder = t('spec_src_ph'); src.dir = 'auto';
+        const msg = el('div', null, 'muted');
+        const btn = el('button', t('spec_submit'), 'btn'); btn.type = 'button';
+        btn.addEventListener('click', async () => {
+            if (!note.value.trim()) { msg.textContent = t('spec_need_note'); return; }
+            btn.disabled = true;
+            const { ok, data } = await api('/api/doctor/review',
+                { claim_id: c.id, verdict: sel.value, note: note.value.trim(), source: src.value.trim() });
+            if (ok) { loadClaims(); loadStats(); } else { msg.textContent = errText(data); btn.disabled = false; }
+        });
+        wrap.append(sel, note, src, btn, msg);
+        return wrap;
+    }
+
+    // ================= join =================
+    async function handleJoin() {
+        const box = $('joinResult'), email = $('joinEmail').value.trim();
+        if (!email) { showResult(box, 'warn', el('div', t('join_need_email'))); return; }
+        const { ok, data } = await api('/api/community/join',
+            { email, name: $('joinName').value.trim(), role: $('joinRole').value });
+        if (!ok) { showResult(box, 'bad', el('div', errText(data))); return; }
+        showResult(box, 'good', el('div', t('join_' + data.code)));
+        loadStats();
+    }
+    $('joinBtn').addEventListener('click', () => guarded($('joinBtn'), handleJoin, $('joinResult')));
+
+    window.addEventListener('hashchange', () => {
+        const id = tabFromHash();
+        if (id) showTab(id, false);
+    });
+
+    // ================= start =================
+    (function init() {
+        let saved = null;
+        try { saved = localStorage.getItem('verifi-lang'); } catch (e) { /* ignore */ }
+        lang = (saved === 'ar' || saved === 'en') ? saved : ((navigator.language || '').toLowerCase().startsWith('ar') ? 'ar' : 'en');
+        applyLang();
+        showTab(tabFromHash() || 'ask', false);
+        loadStats();
+    })();
+</script>
 </body>
 </html>

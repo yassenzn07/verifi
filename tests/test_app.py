@@ -91,5 +91,61 @@ class VerifiTests(unittest.TestCase):
         self.assertEqual(self.post("/api/doctor/login", {"email": "brute@x.org", "code": "TEST-CODE-1"}).status_code, 429)
 
 
+    def test_08_arabic_claims_are_stored_separately(self):
+        a, b = "هل الثوم يعالج الإنفلونزا؟", "هل الحجامة تعالج السكري"
+        for q in (a, b, a):
+            r = self.post("/api/search", {"query": q}).get_json()
+            self.assertFalse(r["verified"])
+            self.assertEqual(r["code"], "queued")
+        with verifi.app.app_context():
+            rows = verifi.get_db().execute("SELECT text, hits FROM claims WHERE text LIKE '%الثوم%' OR text LIKE '%الحجامه%'").fetchall()
+        self.assertEqual(len(rows), 2)                       # two different Arabic claims -> two rows
+        self.assertTrue(all(r["text"].strip() for r in rows))   # never an empty key
+        self.assertEqual(sorted(r["hits"] for r in rows), [1, 2])
+
+    def test_09_punctuation_only_is_not_stored(self):
+        r = self.post("/api/search", {"query": "?!؟ ..."}).get_json()
+        self.assertEqual(r["code"], "empty")
+        with verifi.app.app_context():
+            n = verifi.get_db().execute("SELECT COUNT(*) FROM claims WHERE text=''").fetchone()[0]
+        self.assertEqual(n, 0)
+
+    def test_10_detector_rejects_arabic_without_a_score(self):
+        before = self.c.get("/api/stats").get_json()["total_tests"]
+        r = self.post("/api/detect", {"text": "الثوم يقتل الفيروس في الجسم خلال يوم واحد ويعالج كل الأمراض تماما"}).get_json()
+        self.assertEqual(r["status"], "unsupported")
+        self.assertNotIn("probability", r)
+        self.assertEqual(self.c.get("/api/stats").get_json()["total_tests"], before)   # not counted as a test
+
+    def test_11_team_page_lists_active_members_only(self):
+        html = self.c.get("/").get_data(as_text=True)
+        for name in ("Yassen", "Nour", "Hassan", "Eva", "Ayinezo"):
+            self.assertIn(name, html)
+        self.assertNotIn("Jana", html)
+
+    def test_12_sources_are_returned_and_doctor_can_cite(self):
+        seed = self.post("/api/search", {"query": "does banana raise blood sugar"}).get_json()
+        self.assertIn("source", seed)
+        self.post("/api/doctor/login", {"email": "doc2@x.org", "code": "TEST-CODE-1"})
+        q = "Honey cures diabetes"
+        self.post("/api/search", {"query": q})
+        cid = [x["id"] for x in self.c.get("/api/doctor/claims").get_json()["claims"]
+               if x["text"] == verifi.normalize(q)][0]
+        self.post("/api/doctor/review", {"claim_id": cid, "verdict": "false", "note": "Honey does not cure diabetes.",
+                                          "source": "Example Hospital patient leaflet"})
+        r = self.post("/api/search", {"query": q}).get_json()
+        self.assertEqual(r["source"], "Example Hospital patient leaflet")
+        self.post("/api/doctor/logout", {})
+
+    def test_13_queue_cap(self):
+        old = verifi.NEW_CLAIMS_PER_HOUR
+        verifi.NEW_CLAIMS_PER_HOUR = 0
+        try:
+            r = self.post("/api/search", {"query": "A brand new question about vitamins"}).get_json()
+        finally:
+            verifi.NEW_CLAIMS_PER_HOUR = old
+        self.assertEqual(r["code"], "queue_full")
+
+
 if __name__ == "__main__":
     unittest.main()
